@@ -6,6 +6,7 @@ from pygame.mouse import get_pressed as mouse_pressed
 from settings import *
 
 from menu import Menu
+from canvas import CanvasTile
 
 
 class Editor:
@@ -22,6 +23,9 @@ class Editor:
         # MENU.
         self.menu = Menu()
         self.selected_index = 2
+        # CANVAS.
+        self.canvas_data = {}
+        self.last_selected_cell = None
 
     def event_loop(self):
         for event in pygame.event.get():
@@ -32,6 +36,8 @@ class Editor:
             self.event_mouse(event)
             self.event_keyboard(event)
             self.event_menu(event)
+            # CANVAS EVENT.
+            self.canvas_create()
 
     # INPUT.
     def event_mouse(self, event):
@@ -66,6 +72,24 @@ class Editor:
                 self.selected_index = self.menu.event_click(
                     mouse_pos(), mouse_pressed()
                 )
+
+    # SUPPORT.
+    def get_selected_cell(self):
+        # CO-ORDINATE OF CELL IN GIRD.
+        coordinate = (mouse_pos() - self.origin) // TILE_SIZE
+        return tuple(map(int, coordinate))
+
+    # CANVAS.
+    def canvas_create(self):
+        if mouse_pressed()[0] and not self.menu.rect.collidepoint(mouse_pos()):
+            selected_cell = self.get_selected_cell()
+            if selected_cell != self.last_selected_cell:
+                if selected_cell in self.canvas_data:
+                    self.canvas_data[selected_cell].add_item(self.selected_index)
+                else:
+                    self.canvas_data[selected_cell] = CanvasTile(self.selected_index)
+                # PREVIOUS SELECTED CELL.
+                self.last_selected_cell = selected_cell
 
     # DRAW.
     def draw_grid(self):
