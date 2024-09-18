@@ -18,6 +18,10 @@ class CanvasTile:
         # SETUP.
         self.add_item(tile_id)
 
+    @property
+    def is_empty(self):
+        return not any((self.has_terrain, self.has_water, self.coin, self.enemy))
+
     def add_item(self, tile_id):
         match EDITOR_DATA[tile_id]["style"]:
             case "terrain":
@@ -28,3 +32,14 @@ class CanvasTile:
                 self.coin = tile_id
             case "enemy":
                 self.enemy = tile_id
+
+    def del_item(self, tile_id):
+        match EDITOR_DATA[tile_id]["style"]:
+            case "terrain":
+                self.has_terrain = False
+            case "water":
+                self.has_water = False
+            case "coin":
+                self.coin = None
+            case "enemy":
+                self.enemy = None

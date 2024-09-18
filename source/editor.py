@@ -57,6 +57,7 @@ class Editor:
             self.event_menu(event)
             # CANVAS EVENT.
             self.canvas_create()
+            self.canvas_delete()
 
     # INPUT.
     def event_mouse(self, event):
@@ -143,6 +144,18 @@ class Editor:
                     self.check_neighbors(selected_cell)
                 # PREVIOUS SELECTED CELL.
                 self.last_selected_cell = selected_cell
+
+    def canvas_delete(self):
+        if mouse_pressed()[2] and not self.menu.rect.collidepoint(mouse_pos()):
+            selected_cell = self.get_selected_cell()
+            if selected_cell in self.canvas_data:
+                self.canvas_data[selected_cell].del_item(self.selected_index)
+                # REMOVE EMPTY TILE.
+                if self.canvas_data[selected_cell].is_empty:
+                    del self.canvas_data[selected_cell]
+                # FORMAT SURROUNDING TILES.
+                if EDITOR_DATA[self.selected_index]["menu"] == "terrain":
+                    self.check_neighbors(selected_cell)
 
     # DRAW.
     def draw_grid(self):
