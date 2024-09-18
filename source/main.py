@@ -1,5 +1,6 @@
 import pygame
 from settings import *
+from supports import import_image
 
 from editor import Editor
 
@@ -10,6 +11,10 @@ class Game:
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption("Mario Maker")
         self.clock = pygame.time.Clock()
+        # CURSOR.
+        cursor_surf = import_image("images", "cursors", "mouse")
+        cursor = pygame.cursors.Cursor((0, 0), cursor_surf)
+        pygame.mouse.set_cursor(cursor)
         # SETUP.
         self.editor = Editor()
 
