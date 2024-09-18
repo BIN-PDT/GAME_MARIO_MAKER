@@ -97,23 +97,21 @@ class Editor:
         ]
 
         for cell in filter(lambda cell: cell in self.canvas_data, local_cluster):
+            tile = self.canvas_data[cell]
             # RESET NEIGHBOR ATTRIBUTES.
-            self.canvas_data[cell].terrain_neighbors.clear()
-            self.canvas_data[cell].water_on_top = False
-            # CHECK NEIGHBORS OF THIS CELL.
+            tile.terrain_neighbors.clear()
+            tile.water_on_top = False
+            # CHECK NEIGHBORS OF THIS TILE.
             for name, side in NEIGHBOR_DIRECTIONS.items():
                 neighbor_cell = cell[0] + side[0], cell[1] + side[1]
                 if neighbor_cell in self.canvas_data:
+                    neighbor_tile = self.canvas_data[neighbor_cell]
                     # TERRAIN NEIGHBORS.
-                    if self.canvas_data[neighbor_cell].has_terrain:
-                        self.canvas_data[cell].terrain_neighbors.append(name)
+                    if neighbor_tile.has_terrain:
+                        tile.terrain_neighbors.append(name)
                     # WATER ON TOP.
-                    if (
-                        name == "A"
-                        and self.canvas_data[cell].has_water
-                        and self.canvas_data[neighbor_cell].has_water
-                    ):
-                        self.canvas_data[cell].water_on_top = True
+                    if name == "A" and tile.has_water and neighbor_tile.has_water:
+                        tile.water_on_top = True
 
     # CANVAS.
     def canvas_create(self):
@@ -125,7 +123,8 @@ class Editor:
                 else:
                     self.canvas_data[selected_cell] = CanvasTile(self.selected_index)
                 # FORMAT SURROUNDING TILES.
-                self.check_neighbors(selected_cell)
+                if EDITOR_DATA[self.selected_index]["menu"] == "terrain":
+                    self.check_neighbors(selected_cell)
                 # PREVIOUS SELECTED CELL.
                 self.last_selected_cell = selected_cell
 
