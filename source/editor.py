@@ -107,11 +107,36 @@ class Editor:
             pygame.draw.line(self.grid, LINE_COLOR, (0, y), (WINDOW_WIDTH, y))
         self.screen.blit(self.grid, (0, 0))
 
+    def draw_level(self):
+        for cell_pos, tile in self.canvas_data.items():
+            pos = self.origin + Vector(cell_pos) * TILE_SIZE
+            # WATER.
+            if tile.has_water:
+                surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                surf.fill("blue")
+                self.screen.blit(surf, pos)
+            # TERRAIN.
+            if tile.has_terrain:
+                surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                surf.fill("green")
+                self.screen.blit(surf, pos)
+            # COIN.
+            if tile.coin:
+                surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                surf.fill("yellow")
+                self.screen.blit(surf, pos)
+            # ENEMY.
+            if tile.enemy:
+                surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                surf.fill("red")
+                self.screen.blit(surf, pos)
+
     def run(self, dt):
         self.screen.fill("white")
         # EVENT LOOP.
         self.event_loop()
         # DRAW.
+        self.draw_level()
         self.draw_grid()
         pygame.draw.circle(self.screen, "red", self.origin, 10)
         self.menu.display(self.selected_index)
