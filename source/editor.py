@@ -10,8 +10,10 @@ from canvas import CanvasTile
 
 
 class Editor:
-    def __init__(self):
+    def __init__(self, land_tiles):
         self.screen = pygame.display.get_surface()
+        # ASSETS.
+        self.land_tiles = land_tiles
         # CONTROL POINT.
         self.origin = Vector()
         self.pan_active = False
@@ -79,6 +81,25 @@ class Editor:
         coordinate = (mouse_pos() - self.origin) // TILE_SIZE
         return tuple(map(int, coordinate))
 
+    def check_neighbors(self, cell_pos):
+        # LOCAL CLUSTER.
+        SIZE = 3
+        local_cluster = [
+            (cell_pos[0] + col, cell_pos[1] + row)
+            for col in range(-1, SIZE - 1)
+            for row in range(-1, SIZE - 1)
+        ]
+
+        for cell in filter(lambda cell: cell in self.canvas_data, local_cluster):
+            # RESET NEIGHBOR ATTRIBUTES.
+            self.canvas_data[cell].terrain_neighbors.clear()
+            # CHECK NEIGHBORS OF THIS CELL.
+            for name, side in NEIGHBOR_DIRECTIONS.items():
+                neighbor_cell = cell[0] + side[0], cell[1] + side[1]
+                if neighbor_cell in self.canvas_data:
+                    if self.canvas_data[neighbor_cell].has_terrain:
+                        self.canvas_data[cell].terrain_neighbors.append(name)
+
     # CANVAS.
     def canvas_create(self):
         if mouse_pressed()[0] and not self.menu.rect.collidepoint(mouse_pos()):
@@ -88,6 +109,8 @@ class Editor:
                     self.canvas_data[selected_cell].add_item(self.selected_index)
                 else:
                     self.canvas_data[selected_cell] = CanvasTile(self.selected_index)
+                # FORMAT SURROUNDING TILES.
+                self.check_neighbors(selected_cell)
                 # PREVIOUS SELECTED CELL.
                 self.last_selected_cell = selected_cell
 
@@ -117,8 +140,8 @@ class Editor:
                 self.screen.blit(surf, pos)
             # TERRAIN.
             if tile.has_terrain:
-                surf = pygame.Surface((TILE_SIZE, TILE_SIZE))
-                surf.fill("green")
+                terrain_type = "".join(tile.terrain_neighbors)
+                surf = self.land_tiles.get(terrain_type, self.land_tiles["X"])
                 self.screen.blit(surf, pos)
             # COIN.
             if tile.coin:
