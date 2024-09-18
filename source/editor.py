@@ -5,6 +5,8 @@ from pygame.mouse import get_pos as mouse_pos
 from pygame.mouse import get_pressed as mouse_pressed
 from settings import *
 
+from menu import Menu
+
 
 class Editor:
     def __init__(self):
@@ -17,13 +19,19 @@ class Editor:
         self.grid = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.grid.set_colorkey("green")
         self.grid.set_alpha(30)
+        # MENU.
+        self.menu = Menu()
+        self.selected_index = 2
 
     def event_loop(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             self.event_mouse(event)
+            self.event_keyboard(event)
+            self.event_menu(event)
 
     # INPUT.
     def event_mouse(self, event):
@@ -43,6 +51,21 @@ class Editor:
         # PANNING UPDATE.
         if self.pan_active:
             self.origin = mouse_pos() - self.pan_offset
+
+    def event_keyboard(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RIGHT:
+                self.selected_index += 1
+            if event.key == pygame.K_LEFT:
+                self.selected_index -= 1
+        self.selected_index = max(2, min(18, self.selected_index))
+
+    def event_menu(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.menu.rect.collidepoint(mouse_pos()):
+                self.selected_index = self.menu.event_click(
+                    mouse_pos(), mouse_pressed()
+                )
 
     # DRAW.
     def draw_grid(self):
@@ -67,3 +90,4 @@ class Editor:
         # DRAW.
         self.draw_grid()
         pygame.draw.circle(self.screen, "red", self.origin, 10)
+        self.menu.display(self.selected_index)
