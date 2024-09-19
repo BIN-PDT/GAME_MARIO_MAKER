@@ -13,8 +13,10 @@ from canvas import CanvasTile, CanvasObject
 
 
 class Editor:
-    def __init__(self, land_tiles):
+    def __init__(self, land_tiles, switch_command):
         self.screen = pygame.display.get_surface()
+        # CONTROL.
+        self.switch_command = switch_command
         # ASSETS.
         self.load_assets()
         self.land_tiles = land_tiles
@@ -88,12 +90,12 @@ class Editor:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            # GO TO LEVEL.
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                self.switch_command(self.export_map())
             # CLOUD EVENT.
             if event.type == self.CLOUD_TIMER:
                 self.create_cloud()
-            # EXPORT EVENT.
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                print(self.export_map())
             # GENERAL EVENT.
             self.event_mouse(event)
             self.event_keyboard(event)

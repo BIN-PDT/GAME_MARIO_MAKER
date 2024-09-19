@@ -3,6 +3,8 @@ from settings import *
 from supports import *
 
 from editor import Editor
+from level import Level
+from transition import Transition
 
 
 class Game:
@@ -17,18 +19,36 @@ class Game:
         pygame.mouse.set_cursor(cursor)
         # SETUP.
         self.load_assets()
-        self.editor = Editor(self.land_tiles)
+        self.level = None
+        self.level_active = False
+        self.transition = Transition(self.toggle)
+        self.editor = Editor(self.land_tiles, self.switch)
 
     def load_assets(self):
         # TERRAIN.
         self.land_tiles = import_folder_dict("images", "terrain", "land")
+
+    def toggle(self):
+        self.level_active = not self.level_active
+
+    def switch(self, layers=None):
+        self.transition.is_active = True
+        # SWITCH FROM EDITOR TO LEVEL.
+        if layers:
+            self.level = Level(layers, self.switch)
 
     def run(self):
         while True:
             # DELTA TIME.
             delta_time = self.clock.tick() / 1000
             # GAME LOGIC.
-            self.editor.run(delta_time)
+            if self.level_active:
+                self.level.run(delta_time)
+            else:
+                self.editor.run(delta_time)
+            # TRANSITION.
+            if self.transition.is_active:
+                self.transition.display(delta_time)
             # SCREEN UPDATE.
             pygame.display.update()
 
