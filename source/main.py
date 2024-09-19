@@ -25,8 +25,12 @@ class Game:
         self.editor = Editor(self.land_tiles, self.switch)
 
     def load_assets(self):
-        # TERRAIN.
+        # GENERAL ASSETS.
         self.land_tiles = import_folder_dict("images", "terrain", "land")
+        # LEVEL ASSETS.
+        self.level_assets = {
+            "land": self.land_tiles,
+        }
 
     def toggle(self):
         self.level_active = not self.level_active
@@ -35,7 +39,7 @@ class Game:
         self.transition.is_active = True
         # SWITCH FROM EDITOR TO LEVEL.
         if layers:
-            self.level = Level(layers, self.switch)
+            self.level = Level(self.level_assets, layers, self.switch)
 
     def run(self):
         while True:
