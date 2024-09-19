@@ -55,9 +55,10 @@ class Editor:
         # DEPENDENT ASSETS.
         self.water_bot = import_image("images", "terrain", "water", "water_bottom")
         self.sky_handle_surf = import_image("images", "cursors", "handle")
-        # ANIMATION ASSETS.
-        self.animations = {}
+        # OTHER ASSETS.
+        self.animations, self.previews = {}, {}
         for key, value in EDITOR_DATA.items():
+            # ANIMATION.
             if value["graphics"]:
                 frames_path = value["graphics"].split("/")
                 frames = import_folder_list(*frames_path)
@@ -66,6 +67,12 @@ class Editor:
                     "frames": frames,
                     "length": len(frames),
                 }
+            # PREVIEW.
+            if value["preview"]:
+                surf_path = value["preview"].removesuffix(".png").split("/")
+                surf = import_image(*surf_path)
+                surf.set_alpha(200)
+                self.previews[key] = surf
 
     def event_loop(self):
         for event in pygame.event.get():
@@ -80,6 +87,11 @@ class Editor:
             self.canvas_drag(event)
             self.canvas_create()
             self.canvas_delete()
+
+    def update_animation(self, dt):
+        for value in self.animations.values():
+            value["frame index"] += ANIMATION_SPEED * dt
+            value["frame index"] %= value["length"]
 
     # INPUT.
     def event_mouse(self, event):
@@ -156,10 +168,45 @@ class Editor:
                     if name == "A" and tile.has_water and neighbor_tile.has_water:
                         tile.water_on_top = True
 
-    def update_animation(self, dt):
-        for value in self.animations.values():
-            value["frame index"] += ANIMATION_SPEED * dt
-            value["frame index"] %= value["length"]
+    def draw_indicators(self, object_rect):
+        rect = object_rect.inflate(10, 10)
+        COLOR, WIDTH, LENGTH = "black", 3, 15
+        # TOPLEFT.
+        corner = Vector(rect.topleft)
+        pygame.draw.lines(
+            surface=self.screen,
+            color=COLOR,
+            width=WIDTH,
+            closed=False,
+            points=(corner + (0, LENGTH), corner, corner + (LENGTH, 0)),
+        )
+        # TOPRIGHT.
+        corner = Vector(rect.topright)
+        pygame.draw.lines(
+            surface=self.screen,
+            color=COLOR,
+            width=WIDTH,
+            closed=False,
+            points=(corner + (0, LENGTH), corner, corner - (LENGTH, 0)),
+        )
+        # BOTTOMLEFT.
+        corner = Vector(rect.bottomleft)
+        pygame.draw.lines(
+            surface=self.screen,
+            color=COLOR,
+            width=WIDTH,
+            closed=False,
+            points=(corner - (0, LENGTH), corner, corner + (LENGTH, 0)),
+        )
+        # BOTTOMRIGHT.
+        corner = Vector(rect.bottomright)
+        pygame.draw.lines(
+            surface=self.screen,
+            color=COLOR,
+            width=WIDTH,
+            closed=False,
+            points=(corner - (0, LENGTH), corner, corner - (LENGTH, 0)),
+        )
 
     # CANVAS.
     def canvas_create(self):
@@ -273,6 +320,22 @@ class Editor:
         # OBJECT.
         self.canvas_objects.draw(self.screen)
 
+    def draw_preview(self):
+        if not self.menu.rect.collidepoint(mouse_pos()):
+            selected_object = self.get_selected_object()
+            # INDICATE.
+            if selected_object:
+                self.draw_indicators(selected_object.rect)
+            # PREVIEW.
+            else:
+                surf = self.previews[self.selected_index]
+                if EDITOR_DATA[self.selected_index]["type"] == "tile":
+                    cell = self.get_selected_cell()
+                    rect = surf.get_rect(topleft=self.origin + Vector(cell) * TILE_SIZE)
+                else:
+                    rect = surf.get_rect(center=mouse_pos())
+                self.screen.blit(surf, rect)
+
     def run(self, dt):
         self.screen.fill("white")
         # EVENT LOOP.
@@ -285,4 +348,5 @@ class Editor:
         self.draw_level()
         self.draw_grid()
         pygame.draw.circle(self.screen, "red", self.origin, 10)
+        self.draw_preview()
         self.menu.display(self.selected_index)
