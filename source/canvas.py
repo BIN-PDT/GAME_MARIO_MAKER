@@ -1,3 +1,6 @@
+import pygame
+from pygame.math import Vector2 as Vector
+from pygame.mouse import get_pos as mouse_pos
 from settings import *
 
 
@@ -43,3 +46,47 @@ class CanvasTile:
                 self.coin = None
             case "enemy":
                 self.enemy = None
+
+
+class CanvasObject(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, tile_id, origin):
+        super().__init__(groups)
+        # ANIMATION.
+        self.frames, self.frame_index = frames, 0
+        # SETUP.
+        self.image = self.frames[self.frame_index]
+        self.rect = self.image.get_rect(center=pos)
+        self.tile_id = tile_id
+        # PAN MOVEMENT.
+        self.distance_to_origin = self.rect.topleft - origin
+        # DRAG MOVEMENT.
+        self.is_selected = False
+        self.mouse_offset = Vector()
+
+    def animate(self, dt):
+        self.frame_index += ANIMATION_SPEED * dt
+        self.frame_index %= len(self.frames)
+
+        self.image = self.frames[int(self.frame_index)]
+        self.rect = self.image.get_rect(midbottom=self.rect.midbottom)
+
+    # PAN EVENT.
+    def pan_pos(self, origin):
+        self.rect.topleft = origin + self.distance_to_origin
+
+    # DRAG EVENT.
+    def start_drag(self):
+        self.is_selected = True
+        self.mouse_offset = Vector(mouse_pos()) - self.rect.topleft
+
+    def drag(self):
+        if self.is_selected:
+            self.rect.topleft = Vector(mouse_pos()) - self.mouse_offset
+
+    def end_drag(self, origin):
+        self.is_selected = False
+        self.distance_to_origin = self.rect.topleft - origin
+
+    def update(self, dt):
+        self.animate(dt)
+        self.drag()

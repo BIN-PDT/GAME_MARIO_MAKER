@@ -7,7 +7,7 @@ from settings import *
 from supports import *
 
 from menu import Menu
-from canvas import CanvasTile
+from canvas import CanvasTile, CanvasObject
 
 
 class Editor:
@@ -31,9 +31,28 @@ class Editor:
         self.canvas_data = {}
         self.last_selected_cell = None
 
+        self.canvas_objects = pygame.sprite.Group()
+        self.drag_active = False
+        # DEPENDENT OBJECT.
+        self.player = CanvasObject(
+            pos=(200, WINDOW_HEIGHT / 2),
+            frames=self.animations[0]["frames"],
+            groups=self.canvas_objects,
+            tile_id=0,
+            origin=self.origin,
+        )
+        self.sky_handle = CanvasObject(
+            pos=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2),
+            frames=[self.sky_handle_surf],
+            groups=self.canvas_objects,
+            tile_id=1,
+            origin=self.origin,
+        )
+
     def load_assets(self):
         # DEPENDENT ASSETS.
         self.water_bot = import_image("images", "terrain", "water", "water_bottom")
+        self.sky_handle_surf = import_image("images", "cursors", "handle")
         # ANIMATION ASSETS.
         self.animations = {}
         for key, value in EDITOR_DATA.items():
@@ -56,6 +75,7 @@ class Editor:
             self.event_keyboard(event)
             self.event_menu(event)
             # CANVAS EVENT.
+            self.canvas_drag(event)
             self.canvas_create()
             self.canvas_delete()
 
@@ -76,7 +96,11 @@ class Editor:
                 self.origin.x -= event.y * TILE_SIZE
         # PANNING UPDATE.
         if self.pan_active:
+            # ORIGIN.
             self.origin = mouse_pos() - self.pan_offset
+            # OBJECT.
+            for sprite in self.canvas_objects:
+                sprite.pan_pos(self.origin)
 
     def event_keyboard(self, event):
         if event.type == pygame.KEYDOWN:
@@ -132,18 +156,31 @@ class Editor:
 
     # CANVAS.
     def canvas_create(self):
-        if mouse_pressed()[0] and not self.menu.rect.collidepoint(mouse_pos()):
-            selected_cell = self.get_selected_cell()
-            if selected_cell != self.last_selected_cell:
-                if selected_cell in self.canvas_data:
-                    self.canvas_data[selected_cell].add_item(self.selected_index)
-                else:
-                    self.canvas_data[selected_cell] = CanvasTile(self.selected_index)
-                # FORMAT SURROUNDING TILES.
-                if EDITOR_DATA[self.selected_index]["menu"] == "terrain":
-                    self.check_neighbors(selected_cell)
-                # PREVIOUS SELECTED CELL.
-                self.last_selected_cell = selected_cell
+        if (
+            mouse_pressed()[0]
+            and not self.drag_active
+            and not self.menu.rect.collidepoint(mouse_pos())
+        ):
+            if EDITOR_DATA[self.selected_index]["type"] == "tile":
+                cell = self.get_selected_cell()
+                if cell != self.last_selected_cell:
+                    if cell in self.canvas_data:
+                        self.canvas_data[cell].add_item(self.selected_index)
+                    else:
+                        self.canvas_data[cell] = CanvasTile(self.selected_index)
+                    # FORMAT SURROUNDING TILES.
+                    if EDITOR_DATA[self.selected_index]["menu"] == "terrain":
+                        self.check_neighbors(cell)
+                    # PREVIOUS SELECTED CELL.
+                    self.last_selected_cell = cell
+            else:
+                CanvasObject(
+                    pos=mouse_pos(),
+                    frames=self.animations[self.selected_index]["frames"],
+                    groups=self.canvas_objects,
+                    tile_id=self.selected_index,
+                    origin=self.origin,
+                )
 
     def canvas_delete(self):
         if mouse_pressed()[2] and not self.menu.rect.collidepoint(mouse_pos()):
@@ -156,6 +193,20 @@ class Editor:
                 # FORMAT SURROUNDING TILES.
                 if EDITOR_DATA[self.selected_index]["menu"] == "terrain":
                     self.check_neighbors(selected_cell)
+
+    def canvas_drag(self, event):
+        # START DRAG.
+        if event.type == pygame.MOUSEBUTTONDOWN and mouse_pressed()[0]:
+            for sprite in self.canvas_objects:
+                if sprite.rect.collidepoint(event.pos):
+                    self.drag_active = True
+                    sprite.start_drag()
+        # END DRAG.
+        if event.type == pygame.MOUSEBUTTONUP and self.drag_active:
+            for sprite in self.canvas_objects:
+                if sprite.is_selected:
+                    self.drag_active = False
+                    sprite.end_drag(self.origin)
 
     # DRAW.
     def draw_grid(self):
@@ -174,6 +225,7 @@ class Editor:
         self.screen.blit(self.grid, (0, 0))
 
     def draw_level(self):
+        # TILE.
         for cell_pos, tile in self.canvas_data.items():
             pos = self.origin + Vector(cell_pos) * TILE_SIZE
             # WATER.
@@ -204,6 +256,8 @@ class Editor:
                 surf = frames[index]
                 rect = surf.get_rect(midbottom=Vector(pos) + ENEMY_OFFSET)
                 self.screen.blit(surf, rect)
+        # OBJECT.
+        self.canvas_objects.draw(self.screen)
 
     def run(self, dt):
         self.screen.fill("white")
@@ -211,6 +265,7 @@ class Editor:
         self.event_loop()
         # UPDATE.
         self.update_animation(dt)
+        self.canvas_objects.update(dt)
         # DRAW.
         self.draw_level()
         self.draw_grid()
