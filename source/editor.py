@@ -5,6 +5,7 @@ from pygame.mouse import get_pos as mouse_pos
 from pygame.mouse import get_pressed as mouse_pressed
 from settings import *
 from supports import *
+from timers import Timer
 
 from menu import Menu
 from canvas import CanvasTile, CanvasObject
@@ -33,6 +34,7 @@ class Editor:
 
         self.canvas_objects = pygame.sprite.Group()
         self.drag_active = False
+        self.object_timer = Timer(500)
         # DEPENDENT OBJECT.
         self.player = CanvasObject(
             pos=(200, WINDOW_HEIGHT / 2),
@@ -123,6 +125,11 @@ class Editor:
         coordinate = (mouse_pos() - self.origin) // TILE_SIZE
         return tuple(map(int, coordinate))
 
+    def get_selected_object(self):
+        for sprite in self.canvas_objects:
+            if sprite.rect.collidepoint(mouse_pos()):
+                return sprite
+
     def check_neighbors(self, cell_pos):
         # LOCAL CLUSTER.
         SIZE = 3
@@ -174,16 +181,23 @@ class Editor:
                     # PREVIOUS SELECTED CELL.
                     self.last_selected_cell = cell
             else:
-                CanvasObject(
-                    pos=mouse_pos(),
-                    frames=self.animations[self.selected_index]["frames"],
-                    groups=self.canvas_objects,
-                    tile_id=self.selected_index,
-                    origin=self.origin,
-                )
+                if not self.object_timer.is_active:
+                    self.object_timer.activate()
+                    CanvasObject(
+                        pos=mouse_pos(),
+                        frames=self.animations[self.selected_index]["frames"],
+                        groups=self.canvas_objects,
+                        tile_id=self.selected_index,
+                        origin=self.origin,
+                    )
 
     def canvas_delete(self):
         if mouse_pressed()[2] and not self.menu.rect.collidepoint(mouse_pos()):
+            # OBJECT.
+            selected_object = self.get_selected_object()
+            if selected_object and selected_object.tile_id not in (0, 1):
+                selected_object.kill()
+            # TILE.
             selected_cell = self.get_selected_cell()
             if selected_cell in self.canvas_data:
                 self.canvas_data[selected_cell].del_item(self.selected_index)
@@ -264,6 +278,7 @@ class Editor:
         # EVENT LOOP.
         self.event_loop()
         # UPDATE.
+        self.object_timer.update()
         self.update_animation(dt)
         self.canvas_objects.update(dt)
         # DRAW.
