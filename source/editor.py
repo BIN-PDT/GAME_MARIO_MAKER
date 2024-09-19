@@ -89,7 +89,10 @@ class Editor:
             # CLOUD EVENT.
             if event.type == self.CLOUD_TIMER:
                 self.create_cloud()
-
+            # EXPORT EVENT.
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                print(self.export_map())
+            # GENERAL EVENT.
             self.event_mouse(event)
             self.event_keyboard(event)
             self.event_menu(event)
@@ -102,6 +105,63 @@ class Editor:
         for value in self.animations.values():
             value["frame index"] += ANIMATION_SPEED * dt
             value["frame index"] %= value["length"]
+
+    def export_map(self):
+        # CLEAR OBJECTS DATA OF TILES.
+        for tile in self.canvas_data.values():
+            tile.objects.clear()
+        # LINK OBJECTS TO CANVAS DATA.
+        for obj in self.canvas_objects:
+            link_cell = self.get_selected_cell(obj.distance_to_origin)
+            tile_offset = obj.distance_to_origin - Vector(link_cell) * TILE_SIZE
+
+            if link_cell in self.canvas_data:
+                self.canvas_data[link_cell].add_item(obj.tile_id, tile_offset)
+            else:
+                self.canvas_data[link_cell] = CanvasTile(obj.tile_id, tile_offset)
+        # GRID ORIGIN. (THE TOPLEFT BECOMES THE (0, 0))
+        x_origin = min(self.canvas_data.keys(), key=lambda pos: pos[0])[0]
+        y_origin = min(self.canvas_data.keys(), key=lambda pos: pos[1])[1]
+        # LAYERS OF LEVEL.
+        layers = {
+            "water": {},
+            "bg palm": {},
+            "terrain": {},
+            "enemy": {},
+            "coin": {},
+            "fg object": {},
+        }
+        # FILL DATA TO LAYERS.
+        for tile_pos, tile in self.canvas_data.items():
+            pos = (
+                (tile_pos[0] - x_origin) * TILE_SIZE,
+                (tile_pos[1] - y_origin) * TILE_SIZE,
+            )
+            # WATER.
+            if tile.has_water:
+                layers["water"][pos] = tile.water_type
+            # TERRAIN.
+            if tile.has_terrain:
+                terrain_type = tile.terrain_type
+                terrain_type = terrain_type if terrain_type in self.land_tiles else "X"
+                layers["terrain"][pos] = terrain_type
+            # COIN.
+            if tile.coin:
+                coin_pos = pos[0] + COIN_OFFSET[0], pos[1] + COIN_OFFSET[1]
+                layers["coin"][coin_pos] = tile.coin
+            # ENEMY.
+            if tile.enemy:
+                enemy_pos = pos[0] + ENEMY_OFFSET[0], pos[1] + ENEMY_OFFSET[1]
+                layers["enemy"][enemy_pos] = tile.enemy
+            # OBJECT.
+            if tile.objects:
+                for tile_id, offset in tile.objects:
+                    object_pos = int(pos[0] + offset.x), int(pos[1] + offset.y)
+                    if EDITOR_DATA[tile_id]["style"] == "palm_bg":
+                        layers["bg palm"][object_pos] = tile_id
+                    else:
+                        layers["fg object"][object_pos] = tile_id
+        return layers
 
     # INPUT.
     def event_mouse(self, event):
@@ -142,10 +202,11 @@ class Editor:
                 )
 
     # CAVAS SUPPORT.
-    def get_selected_cell(self):
+    def get_selected_cell(self, object_offset=None):
+        # DISTANCE TO ORIGIN.
+        origin_offset = object_offset or (mouse_pos() - self.origin)
         # CO-ORDINATE OF CELL IN GIRD.
-        coordinate = (mouse_pos() - self.origin) // TILE_SIZE
-        return tuple(map(int, coordinate))
+        return tuple(map(int, origin_offset // TILE_SIZE))
 
     def get_selected_object(self):
         for sprite in self.canvas_objects:
@@ -355,8 +416,7 @@ class Editor:
                     self.screen.blit(surf, pos)
             # TERRAIN.
             if tile.has_terrain:
-                terrain_type = "".join(tile.terrain_neighbors)
-                surf = self.land_tiles.get(terrain_type, self.land_tiles["X"])
+                surf = self.land_tiles.get(tile.terrain_type, self.land_tiles["X"])
                 self.screen.blit(surf, pos)
             # COIN.
             if tile.coin:

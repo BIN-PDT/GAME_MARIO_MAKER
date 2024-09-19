@@ -5,7 +5,7 @@ from settings import *
 
 
 class CanvasTile:
-    def __init__(self, tile_id):
+    def __init__(self, tile_id, object_offset=None):
         # TERRAIN.
         self.has_terrain = False
         self.terrain_neighbors = []
@@ -19,13 +19,21 @@ class CanvasTile:
         # OBJECT.
         self.objects = []
         # SETUP.
-        self.add_item(tile_id)
+        self.add_item(tile_id, object_offset)
 
     @property
     def is_empty(self):
         return not any((self.has_terrain, self.has_water, self.coin, self.enemy))
 
-    def add_item(self, tile_id):
+    @property
+    def water_type(self):
+        return "top" if self.water_on_top else "bottom"
+
+    @property
+    def terrain_type(self):
+        return "".join(self.terrain_neighbors)
+
+    def add_item(self, tile_id, object_offset=None):
         match EDITOR_DATA[tile_id]["style"]:
             case "terrain":
                 self.has_terrain = True
@@ -35,6 +43,9 @@ class CanvasTile:
                 self.coin = tile_id
             case "enemy":
                 self.enemy = tile_id
+            case _:
+                if (tile_id, object_offset) not in self.objects:
+                    self.objects.append((tile_id, object_offset))
 
     def del_item(self, tile_id):
         match EDITOR_DATA[tile_id]["style"]:
