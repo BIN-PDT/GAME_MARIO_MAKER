@@ -1,4 +1,5 @@
 import pygame, sys
+from random import choice, randint
 from pygame.math import Vector2 as Vector
 from pygame.key import get_pressed as key_pressed
 from pygame.mouse import get_pos as mouse_pos
@@ -17,6 +18,11 @@ class Editor:
         # ASSETS.
         self.load_assets()
         self.land_tiles = land_tiles
+        # CLOUDS.
+        self.clouds = []
+        self.startup_clouds()
+        self.CLOUD_TIMER = pygame.USEREVENT + 1
+        pygame.time.set_timer(self.CLOUD_TIMER, 2000)
         # CONTROL POINT.
         self.origin = Vector()
         self.pan_active = False
@@ -55,6 +61,7 @@ class Editor:
         # DEPENDENT ASSETS.
         self.water_bot = import_image("images", "terrain", "water", "water_bottom")
         self.sky_handle_surf = import_image("images", "cursors", "handle")
+        self.cloud_surfs = import_folder_list("images", "clouds")
         # OTHER ASSETS.
         self.animations, self.previews = {}, {}
         for key, value in EDITOR_DATA.items():
@@ -79,6 +86,9 @@ class Editor:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            # CLOUD EVENT.
+            if event.type == self.CLOUD_TIMER:
+                self.create_cloud()
 
             self.event_mouse(event)
             self.event_keyboard(event)
@@ -131,7 +141,7 @@ class Editor:
                     mouse_pos(), mouse_pressed()
                 )
 
-    # SUPPORT.
+    # CAVAS SUPPORT.
     def get_selected_cell(self):
         # CO-ORDINATE OF CELL IN GIRD.
         coordinate = (mouse_pos() - self.origin) // TILE_SIZE
@@ -168,6 +178,7 @@ class Editor:
                     if name == "A" and tile.has_water and neighbor_tile.has_water:
                         tile.water_on_top = True
 
+    # DRAW SUPPORT
     def draw_indicators(self, object_rect):
         rect = object_rect.inflate(10, 10)
         COLOR, WIDTH, LENGTH = "black", 3, 15
@@ -207,6 +218,50 @@ class Editor:
             closed=False,
             points=(corner - (0, LENGTH), corner, corner - (LENGTH, 0)),
         )
+
+    def draw_sky(self, skyline):
+        # SUN.
+        pygame.draw.circle(
+            self.screen, HORIZON_TOP_COLOR, (WINDOW_WIDTH / 2, skyline), 100
+        )
+        # HORIZON.
+        rect = pygame.Rect(0, skyline - 10, WINDOW_WIDTH, 10)
+        pygame.draw.rect(self.screen, HORIZON_TOP_COLOR, rect)
+        rect = pygame.Rect(0, skyline - 16, WINDOW_WIDTH, 4)
+        pygame.draw.rect(self.screen, HORIZON_TOP_COLOR, rect)
+        rect = pygame.Rect(0, skyline - 20, WINDOW_WIDTH, 2)
+        pygame.draw.rect(self.screen, HORIZON_TOP_COLOR, rect)
+        # SEA.
+        rect = pygame.Rect(0, skyline, WINDOW_WIDTH, WINDOW_HEIGHT)
+        pygame.draw.rect(self.screen, SEA_COLOR, rect)
+        # SEPERATOR.
+        pygame.draw.line(
+            self.screen, HORIZON_COLOR, (0, skyline), (WINDOW_WIDTH, skyline), 3
+        )
+
+    def draw_clouds(self, skyline, dt):
+        for cloud in self.clouds:
+            # UPDATE.
+            cloud["pos"].x -= cloud["speed"] * dt
+            # DRAW.
+            pos = cloud["pos"].x, skyline - cloud["pos"].y
+            self.screen.blit(cloud["surf"], pos)
+
+    def create_cloud(self):
+        # REMOVE CLOUD.
+        self.clouds = list(filter(lambda cloud: cloud["pos"].x > -400, self.clouds))
+        # CREATE CLOUD.
+        surf = choice(self.cloud_surfs)
+        surf = pygame.transform.scale2x(surf) if randint(0, 4) < 2 else surf
+        pos = Vector(WINDOW_WIDTH + randint(50, 100), randint(0, WINDOW_HEIGHT))
+        self.clouds.append({"surf": surf, "pos": pos, "speed": randint(20, 50)})
+
+    def startup_clouds(self):
+        for _ in range(10):
+            surf = choice(self.cloud_surfs)
+            surf = pygame.transform.scale2x(surf) if randint(0, 4) < 2 else surf
+            pos = Vector(randint(0, WINDOW_WIDTH), randint(0, WINDOW_HEIGHT))
+            self.clouds.append({"surf": surf, "pos": pos, "speed": randint(20, 50)})
 
     # CANVAS.
     def canvas_create(self):
@@ -336,17 +391,31 @@ class Editor:
                     rect = surf.get_rect(center=mouse_pos())
                 self.screen.blit(surf, rect)
 
+    def draw_background(self, dt):
+        skyline = self.sky_handle.rect.centery
+        if skyline > 0:
+            # SKY BACKGROUND.
+            self.screen.fill(SKY_COLOR)
+            # CLOUDS.
+            self.draw_clouds(skyline, dt)
+            # SKY FOREGROUND.
+            if skyline < WINDOW_HEIGHT:
+                self.draw_sky(skyline)
+        # SEA BACKGROUND.
+        else:
+            self.screen.fill(SEA_COLOR)
+
     def run(self, dt):
-        self.screen.fill("white")
-        # EVENT LOOP.
+        # EVENT.
         self.event_loop()
         # UPDATE.
         self.object_timer.update()
         self.update_animation(dt)
         self.canvas_objects.update(dt)
         # DRAW.
+        self.screen.fill("white")
+        self.draw_background(dt)
         self.draw_level()
         self.draw_grid()
-        pygame.draw.circle(self.screen, "red", self.origin, 10)
         self.draw_preview()
         self.menu.display(self.selected_index)
