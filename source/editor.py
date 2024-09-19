@@ -37,22 +37,24 @@ class Editor:
         # CANVAS.
         self.canvas_data = {}
         self.last_selected_cell = None
-
+        # OBJECTS.
         self.canvas_objects = pygame.sprite.Group()
+        self.bg_objects = pygame.sprite.Group()
+        self.fg_objects = pygame.sprite.Group()
         self.drag_active = False
         self.object_timer = Timer(500)
         # DEPENDENT OBJECT.
         self.player = CanvasObject(
             pos=(200, WINDOW_HEIGHT / 2),
             frames=self.animations[0]["frames"],
-            groups=self.canvas_objects,
+            groups=(self.canvas_objects, self.fg_objects),
             tile_id=0,
             origin=self.origin,
         )
         self.sky_handle = CanvasObject(
             pos=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2),
             frames=[self.sky_handle_surf],
-            groups=self.canvas_objects,
+            groups=(self.canvas_objects, self.fg_objects),
             tile_id=1,
             origin=self.origin,
         )
@@ -346,10 +348,16 @@ class Editor:
             else:
                 if not self.object_timer.is_active:
                     self.object_timer.activate()
+
+                    additional_group = (
+                        self.bg_objects
+                        if EDITOR_DATA[self.selected_index]["style"] == "palm_bg"
+                        else self.fg_objects
+                    )
                     CanvasObject(
                         pos=mouse_pos(),
                         frames=self.animations[self.selected_index]["frames"],
-                        groups=self.canvas_objects,
+                        groups=(self.canvas_objects, additional_group),
                         tile_id=self.selected_index,
                         origin=self.origin,
                     )
@@ -402,6 +410,8 @@ class Editor:
         self.screen.blit(self.grid, (0, 0))
 
     def draw_level(self):
+        # BACKGROUND OBJECT.
+        self.bg_objects.draw(self.screen)
         # TILE.
         for cell_pos, tile in self.canvas_data.items():
             pos = self.origin + Vector(cell_pos) * TILE_SIZE
@@ -432,8 +442,8 @@ class Editor:
                 surf = frames[index]
                 rect = surf.get_rect(midbottom=Vector(pos) + ENEMY_OFFSET)
                 self.screen.blit(surf, rect)
-        # OBJECT.
-        self.canvas_objects.draw(self.screen)
+        # FOREGROUND OBJECT.
+        self.fg_objects.draw(self.screen)
 
     def draw_preview(self):
         if not self.menu.rect.collidepoint(mouse_pos()):
