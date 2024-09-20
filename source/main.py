@@ -29,7 +29,15 @@ class Game:
         self.land_tiles = import_folder_dict("images", "terrain", "land")
         # LEVEL ASSETS.
         self.level_assets = {
+            # TERRAIN.
             "land": self.land_tiles,
+            "water_bottom": import_image("images", "terrain", "water", "water_bottom"),
+            "water_top": import_folder_list("images", "terrain", "water", "animation"),
+            # COIN.
+            "gold": import_folder_list("images", "items", "gold"),
+            "silver": import_folder_list("images", "items", "silver"),
+            "diamond": import_folder_list("images", "items", "diamond"),
+            "particle": import_folder_list("images", "items", "particle"),
         }
 
     def toggle(self):

@@ -27,7 +27,7 @@ class CanvasTile:
 
     @property
     def water_type(self):
-        return "top" if self.water_on_top else "bottom"
+        return "bottom" if self.water_on_top else "top"
 
     @property
     def terrain_type(self):
