@@ -1,4 +1,5 @@
 import pygame
+from random import randint
 from settings import *
 
 
@@ -54,3 +55,18 @@ class Block(Generic):
     def __init__(self, pos, size, groups):
         surf = pygame.Surface(size)
         super().__init__(pos, surf, groups)
+
+
+class Cloud(Generic):
+    def __init__(self, pos, surf, groups, limit):
+        super().__init__(pos, surf, groups, LEVEL_LAYERS["clouds"])
+        # MOVEMENT.
+        self.LIMIT = limit
+        self.SPEED = randint(20, 30)
+
+    def update(self, dt):
+        # MOVEMENT.
+        self.rect.x -= self.SPEED * dt
+        # DESTROY.
+        if self.rect.x < self.LIMIT:
+            self.kill()

@@ -48,6 +48,8 @@ class Game:
             "pearl": import_image("images", "enemies", "pearl", "0"),
             # PLAYER.
             "player": import_folder_dict("images", "player", subordinate=True),
+            # CLOUDS.
+            "clouds": import_folder_list("images", "clouds"),
         }
 
     def toggle(self):

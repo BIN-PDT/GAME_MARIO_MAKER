@@ -1,4 +1,5 @@
 import pygame, sys
+from random import choice, randint
 from settings import *
 
 from sprites import *
@@ -14,6 +15,10 @@ class Level:
         self.switch_command = switch_command
         # ASSETS.
         self.particle_surfs = assets["particle"]
+        self.cloud_surfs = assets["clouds"]
+        # CLOUDS.
+        self.CLOUD_TIMER = pygame.USEREVENT + 2
+        pygame.time.set_timer(self.CLOUD_TIMER, 2000)
         # GROUPS.
         self.all_sprites = CameraGroup()
         self.coin_sprites = pygame.sprite.Group()
@@ -21,17 +26,27 @@ class Level:
         self.collision_sprites = pygame.sprite.Group()
         # SETUP.
         self.build_level(layers, assets)
+        self.startup_clouds()
 
     def event_loop(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            # CLOUD EVENT.
+            if event.type == self.CLOUD_TIMER:
+                self.create_cloud()
             # GO TO EDITOR.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.switch_command()
 
     def build_level(self, layers, assets):
+        # LEVEL LIMIT.
+        self.LEVEL_LIMIT = {
+            "left": -WINDOW_WIDTH,
+            "right": max(layers["terrain"], key=lambda pos: pos[0], default=(0, 0))[0]
+            + 500,
+        }
         # CONSTANT.
         COIN_TYPE = {4: "gold", 5: "silver", 6: "diamond"}
         FG_PALM_TYPE = {11: "small_fg", 12: "large_fg", 13: "left_fg", 14: "right_fg"}
@@ -72,6 +87,9 @@ class Level:
                                 groups=self.all_sprites,
                                 collision_sprites=self.collision_sprites,
                             )
+                        # SKY.
+                        case 1:
+                            self.skyline = self.all_sprites.skyline = pos[1]
                         # COIN.
                         case 4 | 5 | 6:
                             coin_type = COIN_TYPE[data]
@@ -139,6 +157,22 @@ class Level:
             ):
                 self.player.get_damage()
 
+    # BACKGROUND.
+    def create_cloud(self):
+        surf = choice(self.cloud_surfs)
+        surf = pygame.transform.scale2x(surf) if randint(0, 4) < 2 else surf
+        x = self.LEVEL_LIMIT["right"] + randint(100, 300)
+        y = self.skyline - randint(-25, 500)
+        Cloud((x, y), surf, self.all_sprites, self.LEVEL_LIMIT["left"])
+
+    def startup_clouds(self):
+        for _ in range(15):
+            surf = choice(self.cloud_surfs)
+            surf = pygame.transform.scale2x(surf) if randint(0, 4) < 2 else surf
+            x = randint(self.LEVEL_LIMIT["left"], self.LEVEL_LIMIT["right"])
+            y = self.skyline - randint(-25, 500)
+            Cloud((x, y), surf, self.all_sprites, self.LEVEL_LIMIT["left"])
+
     def run(self, dt):
         # EVENT.
         self.event_loop()
@@ -146,5 +180,4 @@ class Level:
         self.all_sprites.update(dt)
         self.check_collision()
         # DRAW.
-        self.screen.fill(SKY_COLOR)
         self.all_sprites.draw(self.player.rect.center)
