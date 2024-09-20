@@ -93,6 +93,7 @@ class Level:
                                 pos=pos,
                                 frames=assets["tooth"],
                                 groups=(self.all_sprites, self.damage_sprites),
+                                collision_sprites=self.collision_sprites,
                             )
                         case 9 | 10:
                             Shell(
