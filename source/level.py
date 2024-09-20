@@ -17,6 +17,7 @@ class Level:
         self.all_sprites = pygame.sprite.Group()
         self.coin_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
+        self.collision_sprites = pygame.sprite.Group()
         # SETUP.
         self.build_level(layers, assets)
 
@@ -34,11 +35,16 @@ class Level:
         COIN_TYPE = {4: "gold", 5: "silver", 6: "diamond"}
         FG_PALM_TYPE = {11: "small_fg", 12: "large_fg", 13: "left_fg", 14: "right_fg"}
         BG_PALM_TYPE = {15: "small_bg", 16: "large_bg", 17: "left_bg", 18: "right_bg"}
+        SHELL_TYPE = {9: "left", 10: "right"}
 
         for layer_name, layer_data in layers.items():
             for pos, data in layer_data.items():
                 if layer_name == "terrain":
-                    Generic(pos, assets["land"][data], self.all_sprites)
+                    Generic(
+                        pos=pos,
+                        surf=assets["land"][data],
+                        groups=(self.all_sprites, self.collision_sprites),
+                    )
                 elif layer_name == "water":
                     if data == "bottom":
                         Generic(pos, assets["water_bottom"], self.all_sprites)
@@ -48,7 +54,11 @@ class Level:
                     match data:
                         # PLAYER.
                         case 0:
-                            self.player = Player(pos, self.all_sprites)
+                            self.player = Player(
+                                pos=pos,
+                                groups=self.all_sprites,
+                                collision_sprites=self.collision_sprites,
+                            )
                         # COIN.
                         case 4 | 5 | 6:
                             coin_type = COIN_TYPE[data]
@@ -71,14 +81,21 @@ class Level:
                                 frames=assets["tooth"],
                                 groups=(self.all_sprites, self.damage_sprites),
                             )
-                        case 9:
-                            Shell(pos, assets["shell"], self.all_sprites, "left")
-                        case 10:
-                            Shell(pos, assets["shell"], self.all_sprites, "right")
+                        case 9 | 10:
+                            shell_type = SHELL_TYPE[data]
+                            Shell(
+                                pos=pos,
+                                frames=assets["shell"],
+                                groups=(self.all_sprites, self.collision_sprites),
+                                orientation=shell_type,
+                            )
                         # FOREGROUND PALM.
                         case 11 | 12 | 13 | 14:
                             palm_type = FG_PALM_TYPE[data]
                             Animate(pos, assets["palms"][palm_type], self.all_sprites)
+                            # COLLIABLE AREA.
+                            block_offset = Vector(67 if "right" in palm_type else 17, 0)
+                            Block(pos + block_offset, (46, 50), self.collision_sprites)
                         # BACKGROUND PALM.
                         case 15 | 16 | 17 | 18:
                             palm_type = BG_PALM_TYPE[data]
@@ -98,3 +115,4 @@ class Level:
         # DRAW.
         self.screen.fill(SKY_COLOR)
         self.all_sprites.draw(self.screen)
+        pygame.draw.rect(self.screen, "yellow", self.player.hitbox)

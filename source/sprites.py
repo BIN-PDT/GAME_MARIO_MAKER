@@ -47,3 +47,9 @@ class Particle(Animate):
             self.image = self.frames[int(self.frame_index)]
         else:
             self.kill()
+
+
+class Block(Generic):
+    def __init__(self, pos, size, groups):
+        surf = pygame.Surface(size)
+        super().__init__(pos, surf, groups)
