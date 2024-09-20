@@ -1,6 +1,7 @@
 import pygame
 from pygame.math import Vector2 as Vector
 from settings import *
+from timers import Timer
 from sprites import Generic
 
 
@@ -12,6 +13,7 @@ class Player(Generic):
         # SETUP.
         surf = self.frames[f"{self.status}_{self.orientation}"][self.frame_index]
         super().__init__(pos, surf, groups)
+        self.mask = pygame.mask.from_surface(self.image)
         # MOVEMENT.
         self.direction = Vector()
         self.SPEED = 300
@@ -22,6 +24,8 @@ class Player(Generic):
         self.collision_sprites = collision_sprites
         self.hitbox = self.rect.inflate(-50, 0)
         self.floor_rect = pygame.Rect(self.hitbox.bottomleft, (self.hitbox.width, 2))
+        # DAMAGE.
+        self.invul_timer = Timer(200)
 
     def input(self):
         keys = pygame.key.get_pressed()
@@ -53,6 +57,12 @@ class Player(Generic):
         self.frame_index %= len(animation)
 
         self.image = animation[int(self.frame_index)]
+        self.mask = pygame.mask.from_surface(self.image)
+        # DAMAGED ANIMATION.
+        if self.invul_timer.is_active:
+            mask = self.mask.to_surface()
+            mask.set_colorkey("black")
+            self.image = mask
 
     # MOVEMENT & COLLISION.
     def move(self, dt):
@@ -100,7 +110,14 @@ class Player(Generic):
                     # RESET GRAVITY.
                     self.direction.y = 0
 
+    # DAMAGE.
+    def get_damage(self):
+        if not self.invul_timer.is_active:
+            self.invul_timer.activate()
+            self.direction.y = -1.25
+
     def update(self, dt):
+        self.invul_timer.update()
         self.input()
 
         self.apply_gravity(dt)

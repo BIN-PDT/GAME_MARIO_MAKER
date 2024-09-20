@@ -132,6 +132,12 @@ class Level:
         # PLAYER & COIN SPRITES.
         for sprite in pygame.sprite.spritecollide(self.player, self.coin_sprites, True):
             Particle(sprite.rect.center, self.particle_surfs, self.all_sprites)
+        # PLAYER & DAMAGE SPRITES.
+        for sprite in self.damage_sprites:
+            if pygame.sprite.spritecollide(
+                self.player, self.damage_sprites, False, pygame.sprite.collide_mask
+            ):
+                self.player.get_damage()
 
     def run(self, dt):
         # EVENT.

@@ -9,6 +9,8 @@ from sprites import Generic
 class Spike(Generic):
     def __init__(self, pos, surf, groups):
         super().__init__(pos, surf, groups)
+        # SETUP.
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 class Shell(Generic):
@@ -77,6 +79,8 @@ class Shell(Generic):
 class Pearl(Generic):
     def __init__(self, pos, surf, groups, direction):
         super().__init__(pos, surf, groups)
+        # SETUP.
+        self.mask = pygame.mask.from_surface(self.image)
         # MOVEMENT.
         self.direction = direction
         self.SPEED = 150
@@ -102,6 +106,7 @@ class Tooth(Generic):
         surf = self.frames[f"run_{self.orientation}"][self.frame_index]
         super().__init__(pos, surf, groups)
         self.rect.midbottom = Vector(pos) + ENEMY_OFFSET
+        self.mask = pygame.mask.from_surface(self.image)
         # MOVEMENT.
         self.direction = -1 if self.orientation == "left" else 1
         self.SPEED = 120
@@ -123,6 +128,7 @@ class Tooth(Generic):
         self.frame_index %= len(animation)
 
         self.image = animation[int(self.frame_index)]
+        self.mask = pygame.mask.from_surface(self.image)
 
     def move(self, dt):
         # REVERSE DIRECTION.
