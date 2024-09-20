@@ -4,6 +4,7 @@ from settings import *
 from sprites import *
 from enemies import *
 from player import Player
+from groups import CameraGroup
 
 
 class Level:
@@ -14,7 +15,7 @@ class Level:
         # ASSETS.
         self.particle_surfs = assets["particle"]
         # GROUPS.
-        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites = CameraGroup()
         self.coin_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
         self.collision_sprites = pygame.sprite.Group()
@@ -47,9 +48,19 @@ class Level:
                     )
                 elif layer_name == "water":
                     if data == "bottom":
-                        Generic(pos, assets["water_bottom"], self.all_sprites)
+                        Generic(
+                            pos=pos,
+                            surf=assets["water_bottom"],
+                            groups=self.all_sprites,
+                            z=LEVEL_LAYERS["water"],
+                        )
                     else:
-                        Animate(pos, assets["water_top"], self.all_sprites)
+                        Animate(
+                            pos=pos,
+                            frames=assets["water_top"],
+                            groups=self.all_sprites,
+                            z=LEVEL_LAYERS["water"],
+                        )
                 else:
                     match data:
                         # PLAYER.
@@ -100,7 +111,12 @@ class Level:
                         # BACKGROUND PALM.
                         case 15 | 16 | 17 | 18:
                             palm_type = BG_PALM_TYPE[data]
-                            Animate(pos, assets["palms"][palm_type], self.all_sprites)
+                            Animate(
+                                pos=pos,
+                                frames=assets["palms"][palm_type],
+                                groups=self.all_sprites,
+                                z=LEVEL_LAYERS["bg"],
+                            )
 
     def check_collision(self):
         # PLAYER & COIN SPRITES.
@@ -115,4 +131,4 @@ class Level:
         self.check_collision()
         # DRAW.
         self.screen.fill(SKY_COLOR)
-        self.all_sprites.draw(self.screen)
+        self.all_sprites.draw(self.player.rect.center)
