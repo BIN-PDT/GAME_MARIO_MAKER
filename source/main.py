@@ -50,10 +50,18 @@ class Game:
             "player": import_folder_dict("images", "player", subordinate=True),
             # CLOUDS.
             "clouds": import_folder_list("images", "clouds"),
+            # SOUND.
+            "music": import_sound("audio", "SuperHero.ogg", volume=0.2),
+            "jump": import_sound("audio", "jump.wav", volume=0.1),
+            "coin": import_sound("audio", "coin.wav", volume=0.3),
+            "hit": import_sound("audio", "hit.wav", volume=0.3),
         }
 
     def toggle(self):
         self.level_active = not self.level_active
+        # SWITCH MUSIC.
+        if not self.level_active:
+            self.editor.music.play(-1)
 
     def switch(self, layers=None):
         self.transition.is_active = True

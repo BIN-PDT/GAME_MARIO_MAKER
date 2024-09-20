@@ -6,7 +6,9 @@ from sprites import Generic
 
 
 class Player(Generic):
-    def __init__(self, pos, frames, groups, collision_sprites):
+    def __init__(self, pos, frames, groups, collision_sprites, jump_sound):
+        # ASSETS.
+        self.jump_sound = jump_sound
         # ANIMATION.
         self.frames, self.frame_index = frames, 0
         self.status, self.orientation = "idle", "right"
@@ -40,6 +42,7 @@ class Player(Generic):
             self.direction.x = 0
         # JUMP.
         if keys[pygame.K_SPACE] and self.on_floor:
+            self.jump_sound.play()
             self.direction.y = -1.5
 
     # ANIMATION.

@@ -16,6 +16,10 @@ class Level:
         # ASSETS.
         self.particle_surfs = assets["particle"]
         self.cloud_surfs = assets["clouds"]
+        self.music = assets["music"]
+        self.music.play(-1)
+        self.hit_sound = assets["hit"]
+        self.coin_sound = assets["coin"]
         # CLOUDS.
         self.CLOUD_TIMER = pygame.USEREVENT + 2
         pygame.time.set_timer(self.CLOUD_TIMER, 2000)
@@ -38,6 +42,7 @@ class Level:
                 self.create_cloud()
             # GO TO EDITOR.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.music.stop()
                 self.switch_command()
 
     def build_level(self, layers, assets):
@@ -86,6 +91,7 @@ class Level:
                                 frames=assets["player"],
                                 groups=self.all_sprites,
                                 collision_sprites=self.collision_sprites,
+                                jump_sound=assets["jump"],
                             )
                         # SKY.
                         case 1:
@@ -149,12 +155,14 @@ class Level:
     def check_collision(self):
         # PLAYER & COIN SPRITES.
         for sprite in pygame.sprite.spritecollide(self.player, self.coin_sprites, True):
+            self.coin_sound.play()
             Particle(sprite.rect.center, self.particle_surfs, self.all_sprites)
         # PLAYER & DAMAGE SPRITES.
         for sprite in self.damage_sprites:
             if pygame.sprite.spritecollide(
                 self.player, self.damage_sprites, False, pygame.sprite.collide_mask
             ):
+                self.hit_sound.play()
                 self.player.get_damage()
 
     # BACKGROUND.

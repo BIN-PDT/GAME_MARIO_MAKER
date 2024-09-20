@@ -20,6 +20,8 @@ class Editor:
         # ASSETS.
         self.load_assets()
         self.land_tiles = land_tiles
+        self.music = import_sound("audio", "Explorer.ogg", volume=0.4)
+        self.music.play(-1)
         # CLOUDS.
         self.clouds = []
         self.startup_clouds()
@@ -92,6 +94,7 @@ class Editor:
                 sys.exit()
             # GO TO LEVEL.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                self.music.stop()
                 self.switch_command(self.export_map())
             # CLOUD EVENT.
             if event.type == self.CLOUD_TIMER:
