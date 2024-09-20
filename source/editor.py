@@ -184,6 +184,9 @@ class Editor:
                 self.origin.y -= event.y * TILE_SIZE
             else:
                 self.origin.x -= event.y * TILE_SIZE
+            # PANNING OBJECT.
+            for sprite in self.canvas_objects:
+                sprite.pan_pos(self.origin)
         # PANNING UPDATE.
         if self.pan_active:
             # ORIGIN.
@@ -203,9 +206,9 @@ class Editor:
     def event_menu(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.menu.rect.collidepoint(mouse_pos()):
-                self.selected_index = self.menu.event_click(
-                    mouse_pos(), mouse_pressed()
-                )
+                choice = self.menu.event_click(mouse_pos(), mouse_pressed())
+                if choice:
+                    self.selected_index = choice
 
     # CAVAS SUPPORT.
     def get_selected_cell(self, object_offset=None):
