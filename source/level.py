@@ -56,6 +56,7 @@ class Level:
                         case 0:
                             self.player = Player(
                                 pos=pos,
+                                frames=assets["player"],
                                 groups=self.all_sprites,
                                 collision_sprites=self.collision_sprites,
                             )
@@ -115,4 +116,3 @@ class Level:
         # DRAW.
         self.screen.fill(SKY_COLOR)
         self.all_sprites.draw(self.screen)
-        pygame.draw.rect(self.screen, "yellow", self.player.hitbox)

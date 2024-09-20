@@ -1,12 +1,16 @@
 import pygame
 from pygame.math import Vector2 as Vector
+from settings import *
 from sprites import Generic
 
 
 class Player(Generic):
-    def __init__(self, pos, groups, collision_sprites):
-        surf = pygame.Surface((80, 64))
-        surf.fill("red")
+    def __init__(self, pos, frames, groups, collision_sprites):
+        # ANIMATION.
+        self.frames, self.frame_index = frames, 0
+        self.status, self.orientation = "idle", "right"
+        # SETUP.
+        surf = self.frames[f"{self.status}_{self.orientation}"][self.frame_index]
         super().__init__(pos, surf, groups)
         # MOVEMENT.
         self.direction = Vector()
@@ -24,14 +28,33 @@ class Player(Generic):
         # MOVE.
         if keys[pygame.K_RIGHT]:
             self.direction.x = 1
+            self.orientation = "right"
         elif keys[pygame.K_LEFT]:
             self.direction.x = -1
+            self.orientation = "left"
         else:
             self.direction.x = 0
         # JUMP.
         if keys[pygame.K_SPACE] and self.on_floor:
-            self.direction.y = -2
+            self.direction.y = -1.5
 
+    # ANIMATION.
+    def check_status(self):
+        if self.direction.y < 0:
+            self.status = "jump"
+        elif self.direction.y > 0:
+            self.status = "fall"
+        else:
+            self.status = "idle" if self.direction.x == 0 else "run"
+
+    def animate(self, dt):
+        animation = self.frames[f"{self.status}_{self.orientation}"]
+        self.frame_index += ANIMATION_SPEED * dt
+        self.frame_index %= len(animation)
+
+        self.image = animation[int(self.frame_index)]
+
+    # MOVEMENT & COLLISION.
     def move(self, dt):
         # HORIZONTAL.
         self.rect.x += self.direction.x * self.SPEED * dt
@@ -47,7 +70,7 @@ class Player(Generic):
         self.rect.y += self.direction.y
 
     def check_on_floor(self):
-        self.floor_rect.top = self.hitbox.bottom
+        self.floor_rect.topleft = self.hitbox.bottomleft
         for sprite in self.collision_sprites:
             if sprite.rect.colliderect(self.floor_rect):
                 self.on_floor = True
@@ -79,6 +102,10 @@ class Player(Generic):
 
     def update(self, dt):
         self.input()
+
         self.apply_gravity(dt)
         self.move(dt)
         self.check_on_floor()
+
+        self.check_status()
+        self.animate(dt)

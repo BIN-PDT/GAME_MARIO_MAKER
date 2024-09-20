@@ -45,6 +45,8 @@ class Game:
             "shell": import_folder_dict(
                 "images", "enemies", "shell_left", subordinate=True
             ),
+            # PLAYER.
+            "player": import_folder_dict("images", "player", subordinate=True),
         }
 
     def toggle(self):
