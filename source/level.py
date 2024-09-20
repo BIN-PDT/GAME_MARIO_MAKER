@@ -2,6 +2,7 @@ import pygame, sys
 from settings import *
 
 from sprites import *
+from enemies import *
 from player import Player
 
 
@@ -15,6 +16,7 @@ class Level:
         # GROUPS.
         self.all_sprites = pygame.sprite.Group()
         self.coin_sprites = pygame.sprite.Group()
+        self.damage_sprites = pygame.sprite.Group()
         # SETUP.
         self.build_level(layers, assets)
 
@@ -28,6 +30,11 @@ class Level:
                 self.switch_command()
 
     def build_level(self, layers, assets):
+        # CONSTANT.
+        COIN_TYPE = {4: "gold", 5: "silver", 6: "diamond"}
+        FG_PALM_TYPE = {11: "small_fg", 12: "large_fg", 13: "left_fg", 14: "right_fg"}
+        BG_PALM_TYPE = {15: "small_bg", 16: "large_bg", 17: "left_bg", 18: "right_bg"}
+
         for layer_name, layer_data in layers.items():
             for pos, data in layer_data.items():
                 if layer_name == "terrain":
@@ -44,13 +51,38 @@ class Level:
                             self.player = Player(pos, self.all_sprites)
                         # COIN.
                         case 4 | 5 | 6:
-                            coin_type = {4: "gold", 5: "silver", 6: "diamond"}[data]
+                            coin_type = COIN_TYPE[data]
                             Coin(
                                 pos=pos,
                                 frames=assets[coin_type],
                                 groups=(self.all_sprites, self.coin_sprites),
                                 coin_type=coin_type,
                             )
+                        # ENEMY.
+                        case 7:
+                            Spike(
+                                pos=pos,
+                                surf=assets["spike"],
+                                groups=(self.all_sprites, self.damage_sprites),
+                            )
+                        case 8:
+                            Tooth(
+                                pos=pos,
+                                frames=assets["tooth"],
+                                groups=(self.all_sprites, self.damage_sprites),
+                            )
+                        case 9:
+                            Shell(pos, assets["shell"], self.all_sprites, "left")
+                        case 10:
+                            Shell(pos, assets["shell"], self.all_sprites, "right")
+                        # FOREGROUND PALM.
+                        case 11 | 12 | 13 | 14:
+                            palm_type = FG_PALM_TYPE[data]
+                            Animate(pos, assets["palms"][palm_type], self.all_sprites)
+                        # BACKGROUND PALM.
+                        case 15 | 16 | 17 | 18:
+                            palm_type = BG_PALM_TYPE[data]
+                            Animate(pos, assets["palms"][palm_type], self.all_sprites)
 
     def check_collision(self):
         # PLAYER & COIN SPRITES.

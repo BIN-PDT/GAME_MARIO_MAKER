@@ -33,11 +33,18 @@ class Game:
             "land": self.land_tiles,
             "water_bottom": import_image("images", "terrain", "water", "water_bottom"),
             "water_top": import_folder_list("images", "terrain", "water", "animation"),
+            "palms": import_folder_dict("images", "terrain", "palm", subordinate=True),
             # COIN.
             "gold": import_folder_list("images", "items", "gold"),
             "silver": import_folder_list("images", "items", "silver"),
             "diamond": import_folder_list("images", "items", "diamond"),
             "particle": import_folder_list("images", "items", "particle"),
+            # ENEMY.
+            "spike": import_image("images", "enemies", "spikes", "0"),
+            "tooth": import_folder_dict("images", "enemies", "tooth", subordinate=True),
+            "shell": import_folder_dict(
+                "images", "enemies", "shell_left", subordinate=True
+            ),
         }
 
     def toggle(self):

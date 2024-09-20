@@ -155,8 +155,7 @@ class Editor:
                 layers["coin"][coin_pos] = tile.coin
             # ENEMY.
             if tile.enemy:
-                enemy_pos = pos[0] + ENEMY_OFFSET[0], pos[1] + ENEMY_OFFSET[1]
-                layers["enemy"][enemy_pos] = tile.enemy
+                layers["enemy"][pos] = tile.enemy
             # OBJECT.
             if tile.objects:
                 for tile_id, offset in tile.objects:
