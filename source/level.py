@@ -37,6 +37,7 @@ class Level:
         FG_PALM_TYPE = {11: "small_fg", 12: "large_fg", 13: "left_fg", 14: "right_fg"}
         BG_PALM_TYPE = {15: "small_bg", 16: "large_bg", 17: "left_bg", 18: "right_bg"}
         SHELL_TYPE = {9: "left", 10: "right"}
+        shell_sprites = pygame.sprite.Group()
 
         for layer_name, layer_data in layers.items():
             for pos, data in layer_data.items():
@@ -94,12 +95,17 @@ class Level:
                                 groups=(self.all_sprites, self.damage_sprites),
                             )
                         case 9 | 10:
-                            shell_type = SHELL_TYPE[data]
                             Shell(
                                 pos=pos,
                                 frames=assets["shell"],
-                                groups=(self.all_sprites, self.collision_sprites),
-                                orientation=shell_type,
+                                groups=(
+                                    self.all_sprites,
+                                    self.collision_sprites,
+                                    shell_sprites,
+                                ),
+                                orientation=SHELL_TYPE[data],
+                                pearl_surf=assets["pearl"],
+                                damage_sprites=self.damage_sprites,
                             )
                         # FOREGROUND PALM.
                         case 11 | 12 | 13 | 14:
@@ -117,6 +123,9 @@ class Level:
                                 groups=self.all_sprites,
                                 z=LEVEL_LAYERS["bg"],
                             )
+        # LINK THE PLAYER TO SHELL.
+        for sprite in shell_sprites:
+            setattr(sprite, "player", self.player)
 
     def check_collision(self):
         # PLAYER & COIN SPRITES.

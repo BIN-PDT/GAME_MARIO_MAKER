@@ -45,6 +45,7 @@ class Game:
             "shell": import_folder_dict(
                 "images", "enemies", "shell_left", subordinate=True
             ),
+            "pearl": import_image("images", "enemies", "pearl", "0"),
             # PLAYER.
             "player": import_folder_dict("images", "player", subordinate=True),
         }
