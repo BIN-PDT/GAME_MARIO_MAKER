@@ -1,4 +1,5 @@
 import pygame, sys
+from os.path import join
 from random import choice, randint
 from settings import *
 
@@ -20,6 +21,7 @@ class Level:
         self.music.play(-1)
         self.hit_sound = assets["hit"]
         self.coin_sound = assets["coin"]
+        self.coin_font = pygame.font.Font(join("font", "PirataOne.ttf"))
         # CLOUDS.
         self.CLOUD_TIMER = pygame.USEREVENT + 2
         pygame.time.set_timer(self.CLOUD_TIMER, 2000)
@@ -55,6 +57,18 @@ class Level:
             "bottom": max(layers["terrain"], key=lambda pos: pos[1], default=(0, 0))[0]
             + 500,
         }
+        # COINS COLLECTION.
+        self.coins_collection = {}
+        for index, coin_type in enumerate(("gold", "silver", "diamond")):
+            coin_pos = index * 2 * TILE_SIZE + COIN_OFFSET[0], COIN_OFFSET[1]
+            text_pos = coin_pos[0] + TILE_SIZE * 0.8, coin_pos[1]
+            self.coins_collection[coin_type] = {
+                "surf": assets[coin_type][0],
+                "coin_pos": coin_pos,
+                "text_pos": text_pos,
+                "collect": 0,
+                "maximum": 0,
+            }
         # CONSTANT.
         COIN_TYPE = {4: "gold", 5: "silver", 6: "diamond"}
         FG_PALM_TYPE = {11: "small_fg", 12: "large_fg", 13: "left_fg", 14: "right_fg"}
@@ -108,6 +122,7 @@ class Level:
                                 groups=(self.all_sprites, self.coin_sprites),
                                 coin_type=coin_type,
                             )
+                            self.coins_collection[coin_type]["maximum"] += 1
                         # ENEMY.
                         case 7:
                             Spike(
@@ -159,6 +174,7 @@ class Level:
         # PLAYER & COIN SPRITES.
         for sprite in pygame.sprite.spritecollide(self.player, self.coin_sprites, True):
             self.coin_sound.play()
+            self.coins_collection[sprite.coin_type]["collect"] += 1
             Particle(sprite.rect.center, self.particle_surfs, self.all_sprites)
         # PLAYER & DAMAGE SPRITES.
         for sprite in self.damage_sprites:
@@ -189,6 +205,18 @@ class Level:
             y = self.skyline - randint(-25, 500)
             Cloud((x, y), surf, self.all_sprites, self.LEVEL_LIMIT["left"])
 
+    def draw_coins_collection(self):
+        for item in self.coins_collection.values():
+            # DRAW COIN ICON.
+            coin_surf = item["surf"]
+            coin_rect = coin_surf.get_rect(center=item["coin_pos"])
+            self.screen.blit(coin_surf, coin_rect)
+            # DRAW COIN COLLECT.
+            collect_text = f"{item['collect']} / {item['maximum']}"
+            collect_surf = self.coin_font.render(collect_text, False, "black")
+            collect_rect = collect_surf.get_rect(center=item["text_pos"])
+            self.screen.blit(collect_surf, collect_rect)
+
     def run(self, dt):
         # EVENT.
         self.event_loop()
@@ -198,3 +226,4 @@ class Level:
         self.check_abyss()
         # DRAW.
         self.all_sprites.draw(self.player.rect.center)
+        self.draw_coins_collection()
