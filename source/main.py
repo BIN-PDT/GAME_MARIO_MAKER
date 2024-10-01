@@ -59,6 +59,8 @@ class Game:
 
     def toggle(self):
         self.level_active = not self.level_active
+        # TOGGLE MOUSE.
+        pygame.mouse.set_visible(not self.level_active)
         # SWITCH MUSIC.
         if not self.level_active:
             self.editor.music.play(-1)
