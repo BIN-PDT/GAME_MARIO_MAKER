@@ -51,6 +51,9 @@ class Level:
             "left": -WINDOW_WIDTH,
             "right": max(layers["terrain"], key=lambda pos: pos[0], default=(0, 0))[0]
             + 500,
+            "top": -WINDOW_HEIGHT,
+            "bottom": max(layers["terrain"], key=lambda pos: pos[1], default=(0, 0))[0]
+            + 500,
         }
         # CONSTANT.
         COIN_TYPE = {4: "gold", 5: "silver", 6: "diamond"}
@@ -165,6 +168,11 @@ class Level:
                 self.hit_sound.play()
                 self.player.get_damage()
 
+    def check_abyss(self):
+        if self.player.rect.bottom > self.LEVEL_LIMIT["bottom"]:
+            self.player.rect.bottom = self.LEVEL_LIMIT["top"]
+            self.player.direction.y = 0
+
     # BACKGROUND.
     def create_cloud(self):
         surf = choice(self.cloud_surfs)
@@ -187,5 +195,6 @@ class Level:
         # UPDATE.
         self.all_sprites.update(dt)
         self.check_collision()
+        self.check_abyss()
         # DRAW.
         self.all_sprites.draw(self.player.rect.center)
